@@ -25,8 +25,8 @@ public class JwtUtils {
                 .compact();
     }
 
-    public String getUserNameFromJwtToken(String token) {
-        return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody().getSubject();
+    public String getUserNameFromJwtToken(String authToken) {
+        return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken).getBody().getSubject();
     }
 
     //TODO:добить ошибки или объединить
@@ -43,5 +43,10 @@ public class JwtUtils {
         }
 
         return false;
+    }
+
+    private Boolean isTokenExpired(String authToken) {
+        final Date expiration = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken).getBody().getExpiration();
+        return expiration.before(new Date());
     }
 }

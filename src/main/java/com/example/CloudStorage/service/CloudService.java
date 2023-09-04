@@ -28,21 +28,13 @@ public class CloudService {
         this.cloudRepository = cloudRepository;
     }
 
-//    public String login(AuthorizationRequestEntity authorization){
-//        return cloudRepository.login(authorization.getLogin(),authorization.getPassword()).orElseThrow(() -> new AuthorizationError("Bad credentials"));
-//    }
-
     public String login(AuthorizationRequestEntity authorization) {
         try {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authorization.getLogin(), authorization.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
             String jwt = jwtUtils.generateJwtToken(userPrincipal);
-
-//        List<String> roles = userPrincipal.getAuthorities().stream()
-//                .map(GrantedAuthority::getAuthority)
-//                .collect(Collectors.toList());
-
+            cloudRepository.login(jwt, userPrincipal);
             return jwt;
         } catch (BadCredentialsException e) {
             throw new AuthorizationError("Bad credentials");
@@ -51,6 +43,6 @@ public class CloudService {
 
 
     public void logout(String authToken) {
-        cloudRepository.logout(authToken);
+        cloudRepository.logout(authToken).orElseThrow(() -> new AuthorizationError("Authotization error occured: couldn't remove JWT"));
     }
 }

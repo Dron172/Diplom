@@ -3,18 +3,19 @@ package com.example.CloudStorage.controller;
 import com.example.CloudStorage.DTO.AuthorizationRequestDTO;
 import com.example.CloudStorage.DTO.AuthorizationTokenDTO;
 import com.example.CloudStorage.DTO.ErrorResponseDTO;
-import com.example.CloudStorage.entity.File;
+import com.example.CloudStorage.entity.CloudFile;
 import com.example.CloudStorage.exception.AuthorizationError;
 import com.example.CloudStorage.exception.CloudException;
 import com.example.CloudStorage.service.CloudService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.util.List;
@@ -48,8 +49,46 @@ public class CloudController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @DeleteMapping(value = "/file", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> removeFile(@RequestHeader("auth-token") String authToken, @Valid @RequestParam String filename) {
+        cloudService.removeFile(authToken, filename);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+    //StreamingResponseBody
+    //ResponseEntity<Resource>
+    @GetMapping(value = "/file", produces = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Resource> downloadFile(@RequestHeader("auth-token") String authToken, @Valid @RequestParam String filename, HttpServletResponse response) throws IOException {
+        CloudFile file = cloudService.downloadFile(authToken, filename);
+//        CloudMultipartFile file = new CloudMultipartFile(cloudService.downloadFile(authToken, filename));
+//        final HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+//        //headers.setContentDisposition(ContentDisposition.builder("inline").filename(filename).build());
+//        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+//        headers.setContentLength(file.getData().length);
+//        final StreamingResponseBody responseBody = out -> {
+//            out.write(file.getData());
+//        };
+//        //return new ResponseEntity<>(responseBody, headers, HttpStatus.OK);
+
+//        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"");
+//        response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(file.getData().length));
+//        response.setContentType(file.getType());
+//        ServletOutputStream outputStream = response.getOutputStream();
+//        outputStream.write(file.getData());
+//        outputStream.flush();
+//        outputStream.close();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.getType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
+                //.body(file);
+                .body(new ByteArrayResource(file.getData()));
+        //return new ResponseEntity<String>(String.format("{\"hash\":\"%d\",\"file\":\"%s\"}", file.hashCode(), new String(file.getData())), HttpStatus.OK);
+
+    }
+
     @GetMapping("/list")
-    public List<File> getFiles(@RequestHeader("auth-token") String authToken, @RequestParam("limit") int limit) {
+    public List<CloudFile> getFiles(@RequestHeader("auth-token") String authToken, @RequestParam("limit") int limit) {
         return cloudService.getFiles(authToken, limit);
     }
 

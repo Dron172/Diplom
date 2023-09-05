@@ -8,7 +8,7 @@
             <e-upload class="home__upload"
                       @update="uploadNewFile" />
 
-            <table class="home__files files">
+            <table class="home__files cloudFiles">
                 <thead>
                     <tr>
                         <th class="files__header files__header-select"
@@ -62,59 +62,59 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(file, fileIndex) in preparedFiles"
+                    <tr v-for="(cloudFile, fileIndex) in preparedFiles"
                         :key="fileIndex"
                         :class="{
-                             'files__file--error': file.error,
-                             'files__file--selected': file.selected,
+                             'files__file--error': cloudFile.error,
+                             'files__file--selected': cloudFile.selected,
                              'files__file--show-select': isSeveralFilesSelected
                          }"
-                        class="files__file file">
+                        class="files__file cloudFile">
                         <td class="files__cell files__cell--select">
-                            <e-checkbox v-model="file.selected" @change="onFileSelect" />
+                            <e-checkbox v-model="cloudFile.selected" @change="onFileSelect" />
                         </td>
-                        <td :title="file.filename" class="files__cell"
-                            @click="file.selected = !file.selected">
+                        <td :title="cloudFile.filename" class="files__cell"
+                            @click="cloudFile.selected = !cloudFile.selected">
                             <div :class="[
-                                     `files__extension-icon--length-${file.ext.length}`
+                                     `files__extension-icon--length-${cloudFile.ext.length}`
                                  ]"
                                  :style="{
-                                    borderColor: getExtColor(file.ext),
-                                    color: getExtColor(file.ext)
+                                    borderColor: getExtColor(cloudFile.ext),
+                                    color: getExtColor(cloudFile.ext)
                                  }"
                                  class="files__extension-icon">
-                                {{ file.ext }}
+                                {{ cloudFile.ext }}
                             </div>
 
-                            <span class="file__name">{{ getFileNameWithoutExt(file) }}</span>
-                            <span>.{{ file.ext }}</span>
+                            <span class="file__name">{{ getFileNameWithoutExt(cloudFile) }}</span>
+                            <span>.{{ cloudFile.ext }}</span>
                         </td>
                         <td class="files__cell"
-                            @click="file.selected = !file.selected">
+                            @click="cloudFile.selected = !cloudFile.selected">
                             <span>
-                                {{ getFormattedDate(file.editedAt) }}
+                                {{ getFormattedDate(cloudFile.editedAt) }}
                             </span>
                         </td>
                         <td class="files__cell"
-                            @click="file.selected = !file.selected">
+                            @click="cloudFile.selected = !cloudFile.selected">
                             <span>
-                                {{ getFormattedSize(file.size) }}
+                                {{ getFormattedSize(cloudFile.size) }}
                             </span>
                         </td>
                         <td class="files__cell files__cell--actions">
                             <e-button title="Изменить"
                                       type="text"
-                                      @click="fileChangeName(file)">
+                                      @click="fileChangeName(cloudFile)">
                                 <img src="@/assets/icons/edit.svg">
                             </e-button>
                             <e-button title="Скачать"
                                       type="text"
-                                      @click="fileDownload(file)">
+                                      @click="fileDownload(cloudFile)">
                                 <img src="@/assets/icons/download.svg">
                             </e-button>
                             <e-button title="Удалить"
                                       type="text"
-                                      @click="fileDelete(file)">
+                                      @click="fileDelete(cloudFile)">
                                 <img src="@/assets/icons/delete.svg">
                             </e-button>
                         </td>
@@ -146,24 +146,24 @@
             const store = useStore();
             const sortColumn = ref('filename');
             const sortColumnReverse = ref(false);
-            const files = reactive([] as any);
+            const cloudFiles = reactive([] as any);
             const allFilesSelection = ref(false);
 
             const onFileSelect = () => {
-                const selectedCount = files.filter((f: any) => f.selected).length;
+                const selectedCount = cloudFiles.filter((f: any) => f.selected).length;
 
-                allFilesSelection.value = selectedCount === files.length;
+                allFilesSelection.value = selectedCount === cloudFiles.length;
             };
 
             const getFiles = () => {
                 store.dispatch('getFiles')
                     .then(res => {
-                        files.length = 0;
-                        for (const file of res.data) {
-                            file.error = false;
-                            file.selected = false;
-                            file.ext = file.filename.match(/\.\w+$/g)[0].slice(1);
-                            files.push(file);
+                        cloudFiles.length = 0;
+                        for (const cloudFile of res.data) {
+                            cloudFile.error = false;
+                            cloudFile.selected = false;
+                            cloudFile.ext = cloudFile.filename.match(/\.\w+$/g)[0].slice(1);
+                            cloudFiles.push(cloudFile);
                         }
 
                         // Сбрасываем счетчик выделенных файлов
@@ -173,23 +173,23 @@
 
             getFiles();
 
-            const uploadNewFile = (file: any) => {
+            const uploadNewFile = (cloudFile: any) => {
                 store.dispatch('addNotification', {
-                    text: `Загрузка файла "${file.name}"`,
+                    text: `Загрузка файла "${cloudFile.name}"`,
                     status: 'loading'
                 }).then(notification => {
-                    uploadFile(file, file.name)
+                    uploadFile(cloudFile, cloudFile.name)
                         .then(res => {
                             setTimeout(() => {
                                 getFiles();
                                 notification.status = 'success';
-                                notification.text = `Файл "${file.name}" успешно загружен`;
+                                notification.text = `Файл "${cloudFile.name}" успешно загружен`;
                             }, 2000);
                         })
                         .catch(res => {
                             setTimeout(() => {
                                 notification.status = 'error';
-                                notification.text = `Не удалось загрузить файл "${file.name}"`;
+                                notification.text = `Не удалось загрузить файл "${cloudFile.name}"`;
                             }, 2000);
                         })
                         .then(() => {
@@ -201,9 +201,9 @@
             };
 
             const preparedFiles = computed(() => {
-                if (files.length === 0) return [];
+                if (cloudFiles.length === 0) return [];
 
-                const sortedFiles = Array.from(files).sort((fileA: any, fileB: any) => {
+                const sortedFiles = Array.from(cloudFiles).sort((fileA: any, fileB: any) => {
                     if (typeof fileA[sortColumn.value] === 'number') {
                         return fileA[sortColumn.value] - fileB[sortColumn.value];
                     } else {
@@ -230,12 +230,12 @@
                 return `${(size / 1024 / 1024).toFixed(1)} МБ`;
             };
 
-            const getFileNameWithoutExt = (file: any) => {
-                return file.filename.replace(new RegExp(`.${file.ext}$`), '');
+            const getFileNameWithoutExt = (cloudFile: any) => {
+                return cloudFile.filename.replace(new RegExp(`.${cloudFile.ext}$`), '');
             };
 
             const isSeveralFilesSelected = computed(() => {
-                return files.some((f: any) => f.selected);
+                return cloudFiles.some((f: any) => f.selected);
             });
 
             const changeSort = (column: string) => {
@@ -249,103 +249,103 @@
             };
 
             const selectAllFiles = () => {
-                files.map((f: any) => {
+                cloudFiles.map((f: any) => {
                     f.selected = !!allFilesSelection.value;
                     return f;
                 });
             };
 
-            const fileChangeName = (file: any) => {
+            const fileChangeName = (cloudFile: any) => {
                 store.dispatch('addNotification', {
-                    text: `Переименование файла "${file.filename}"`,
+                    text: `Переименование файла "${cloudFile.filename}"`,
                     status: 'loading'
                 }).then(notification => {
-                    const filename = `${Math.floor(Math.random() * 1000)}.${file.ext}`;
+                    const filename = `${Math.floor(Math.random() * 1000)}.${cloudFile.ext}`;
 
-                    updateFile(file.filename, {filename})
+                    updateFile(cloudFile.filename, {filename})
                         .then(res => {
                             setTimeout(() => {
-                                file.filename = filename;
+                                cloudFile.filename = filename;
 
                                 notification.status = 'success';
-                                notification.text = `Файл "${file.filename}" успешно переименован`;
+                                notification.text = `Файл "${cloudFile.filename}" успешно переименован`;
                             }, 2000);
                         })
                         .catch(res => {
                             setTimeout(() => {
-                                file.error = true;
+                                cloudFile.error = true;
                                 notification.status = 'error';
-                                notification.text = `Не удалось переименовать файл "${file.filename}"`;
+                                notification.text = `Не удалось переименовать файл "${cloudFile.filename}"`;
                             }, 2000);
                         })
                         .then(() => {
                             setTimeout(() => {
-                                file.error = false;
+                                cloudFile.error = false;
                                 notification.hidden = true;
                             }, 5000);
                         });
                 })
             };
 
-            const fileDownload = (file: any) => {
+            const fileDownload = (cloudFile: any) => {
                 store.dispatch('addNotification', {
-                    text: `Скачивание файла "${file.filename}"`,
+                    text: `Скачивание файла "${cloudFile.filename}"`,
                     status: 'loading'
                 }).then(notification => {
-                    downloadFile(file.filename)
+                    downloadFile(cloudFile.filename)
                         .then((res: any) => {
                             const url = window.URL.createObjectURL(new Blob([res.data]));
                             const link = document.createElement('a');
                             link.href = url;
-                            link.setAttribute('download', file.filename);
+                            link.setAttribute('download', cloudFile.filename);
                             document.body.appendChild(link);
                             link.click();
 
                             setTimeout(() => {
                                 notification.status = 'success';
-                                notification.text = `Файл "${file.filename}" успешно скачан`;
+                                notification.text = `Файл "${cloudFile.filename}" успешно скачан`;
                             }, 2000);
                         })
                         .catch(res => {
                             setTimeout(() => {
-                                file.error = true;
+                                cloudFile.error = true;
                                 notification.status = 'error';
-                                notification.text = `Не удалось скачать файл "${file.filename}"`;
+                                notification.text = `Не удалось скачать файл "${cloudFile.filename}"`;
                             }, 2000);
                         })
                         .then(() => {
                             setTimeout(() => {
-                                file.error = false;
+                                cloudFile.error = false;
                                 notification.hidden = true;
                             }, 5000);
                         });
                 })
             };
 
-            const fileDelete = (file: any) => {
+            const fileDelete = (cloudFile: any) => {
                 store.dispatch('addNotification', {
-                    text: `Удаление файла "${file.filename}"`,
+                    text: `Удаление файла "${cloudFile.filename}"`,
                     status: 'loading'
                 }).then(notification => {
-                    deleteFile(file.filename)
+                    deleteFile(cloudFile.filename)
                         .then(res => {
                             setTimeout(() => {
                                 getFiles();
 
                                 notification.status = 'success';
-                                notification.text = `Файл "${file.filename}" успешно удалён`;
+                                notification.text = `Файл "${cloudFile.filename}" успешно удалён`;
                             }, 2000);
                         })
                         .catch(res => {
                             setTimeout(() => {
-                                file.error = true;
+                                cloudFile.error = true;
                                 notification.status = 'error';
-                                notification.text = `Не удалось удалить файл "${file.filename}"`;
+                                notification.text = `Не удалось удалить файл "${cloudFile.filename}"`;
                             }, 2000);
                         })
                         .then(() => {
                             setTimeout(() => {
-                                file.error = false;
+                                cloudFile.error = false;
                                 notification.hidden = true;
                             }, 5000);
                         });
@@ -353,7 +353,7 @@
             };
 
             const selectedDownload = () => {
-                const selectedFiles = files.filter((f: any) => f.selected);
+                const selectedFiles = cloudFiles.filter((f: any) => f.selected);
 
                 selectedFiles.forEach((f: any) => {
                     fileDownload(f);
@@ -361,7 +361,7 @@
             };
 
             const selectedDelete = () => {
-                const selectedFiles = files.filter((f: any) => f.selected);
+                const selectedFiles = cloudFiles.filter((f: any) => f.selected);
 
                 selectedFiles.forEach((f: any) => {
                     fileDelete(f);
@@ -369,7 +369,7 @@
             };
 
             return {
-                files,
+                cloudFiles,
                 allFilesSelection,
                 preparedFiles,
                 isSeveralFilesSelected,
@@ -420,7 +420,7 @@
             text-align: left;
             box-sizing: border-box;
 
-            .files {
+            .cloudFiles {
                 &__header {
                     padding: 18px 16px;
                     border-bottom: 2px solid #C4C4C4;
@@ -472,7 +472,7 @@
                         background-color: $color-light-blue;
                     }
 
-                    .file {
+                    .cloudFile {
                         &__name {
                             display: inline-block;
                             max-width: 400px;

@@ -67,8 +67,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and().authorizeRequests()
                 .antMatchers("/", "/login*").permitAll()
-                .antMatchers("/file").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-                .antMatchers("/list").hasAuthority("ROLE_ADMIN")
+                .antMatchers("/file", "/list").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                 .anyRequest().authenticated()
                 .and().formLogin().disable();
                 //.logout().logoutSuccessUrl("/").deleteCookies("JSESSIONID");
